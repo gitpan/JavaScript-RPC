@@ -1,5 +1,11 @@
 Revision history for Perl extension JavaScript::RPC::Server::CGI.
 
+0.04  Fri Jan 30 21:24:36 2004
+	- Added missing _js_escape() sub
+	- Documenation fixed
+	- env() now returns a hash on set
+	- Added get_new_query() - used by query()
+
 0.03  Sat Jan 24 22:54:22 2004
 	- Fixed example programs
 	- Added string escaping to error()

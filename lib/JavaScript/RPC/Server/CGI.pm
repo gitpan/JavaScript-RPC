@@ -3,7 +3,7 @@ package JavaScript::RPC::Server::CGI;
 use strict;
 use Carp;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 =head1 NAME
 
@@ -18,7 +18,7 @@ JavaScript::RPC::Server::CGI - Remote procedure calls from JavaScript
 	sub add {
 		my $self = shift;
 	        unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-        	        return $self->error( 'inputs must be \' digits only' )
+        	        return $self->error( 'inputs must be digits only' )
 	        }
 		return $self->result( $_[ 0 ] + $_[ 1 ] );
 	}
@@ -72,7 +72,7 @@ sub new {
 
 =head2 query()
 
-Gets / sets the query object. It must be a CGI.pm compatible object.
+Gets / sets the query object.
 
 =cut
 
@@ -81,13 +81,35 @@ sub query {
 	my $query = shift || $self->{ query };
 
 	unless( defined $query ) {
-		require CGI;
-		$query = CGI->new;
+		$query = $self->get_new_query;
 	}
 
 	$self->{ query } = $query;
 
 	return $query;
+}
+
+=head2 get_new_query()
+
+This method generates a new query object. It is used internally by the
+query() method. This method should only be used if you want to supply
+a query object other than the standard CGI.pm object. However, it must
+be a CGI.pm compatible object. Here's an example using CGI::Simple.
+
+	sub get_new_query {
+		require CGI::Simple;
+		my $q = CGI::Simple->new();
+
+		return $q;
+	}
+
+=cut
+
+sub get_new_query {
+	require CGI;
+	my $q = CGI->new();
+
+	return $q;
 }
 
 =head2 env()
@@ -113,16 +135,19 @@ contains four items:
 sub env {
 	my $self = shift;
 
-	if( @_ and @_ % 2 == 0 ) {
-		my %env  = @_;
-		for( keys %env ) {
-			$self->{ env }->{ $_ } = $env{ $_ };
+	if( @_ ) {
+		if( @_ % 2 == 0 ) {
+			my %env  = @_;
+			for( keys %env ) {
+				$self->{ env }->{ $_ } = $env{ $_ };
+			}
+		}
+		else {
+			return $self->{ env }->{ $_[ 0 ] };
 		}
 	}
-	else {
-		return $self->{ env }->{ $_[ 0 ] } if @_;
-		return %{ $self->{ env } };
-	}
+
+	return %{ $self->{ env } };
 }
 
 =head2 error_message()
@@ -148,7 +173,7 @@ to the caller. An error will occur if the method name is blank, or the method
 has not been defined. This function takes an optional CGI.pm compatible object
 as an input.
 
-Your subclass' methods should finish off with one of the following:
+Your subclass' methods MUST finish off with one of the following:
 
 	# for an error...
 	return $self->error( $message );
@@ -159,9 +184,8 @@ Your subclass' methods should finish off with one of the following:
 =cut
 
 sub process {
-	my $self   = shift;
-
-	my $query  = shift || $self->query;
+	my $self    = shift;
+	my $query   = shift || $self->query;
 
 	my $method  = $query->param( 'F' ) || undef;
 	my $uid     = $query->param( 'U' ) || undef;
@@ -266,5 +290,11 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 
 
 =cut
+
+sub _js_escape {
+        my $string = shift;
+        $string =~ s/'/\\'/g;
+        return $string;
+}
 
 1;
