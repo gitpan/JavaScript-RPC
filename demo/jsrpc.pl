@@ -1,19 +1,28 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
+
+package MyJSRPC;
+
+use base qw( JavaScript::RPC::Server::CGI );
+
+sub add {
+	my $self = shift;
+	unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+		return $self->error( 'inputs must be digits only' ) 
+	}
+	return $self->result( $_[ 0 ] + $_[ 1 ] );
+}
+
+sub subtract {
+	my $self = shift;
+	unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+		return $self->error( 'inputs must be digits only' ) 
+	}
+	return $self->result( $_[ 0 ] - $_[ 1 ] );
+}
+
+package main;
 
 use strict;
 
-use JavaScript::RPC::Server::CGI;
-
-my $server = JavaScript::RPC::Server::CGI->new;
-
-$server->method(
-	add      => sub {
-		return $_[ 0 ] + $_[ 1 ]
-	},
-	subtract => sub {
-		return $_[ 0 ] - $_[ 1 ]
-	}
-
-);
-
+my $server = MyJSRPC->new;
 $server->process;

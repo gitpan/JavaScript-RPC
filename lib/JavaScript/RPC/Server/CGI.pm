@@ -3,7 +3,7 @@ package JavaScript::RPC::Server::CGI;
 use strict;
 use Carp;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 =head1 NAME
 
@@ -11,21 +11,31 @@ JavaScript::RPC::Server::CGI - Remote procedure calls from JavaScript
 
 =head1 SYNOPSIS
 
-	use JavaScript::RPC::Server::CGI;
-
-	my $server = JavaScript::RPC::Server::CGI->new;
-
-	# define "add" and "subtract" methods
-	$server->method(
-		add      => sub {
-			return $_[ 0 ] + $_[ 1 ];
-		},
-		subtract => sub {
-			return $_[ 0 ] - $_[ 1 ];
+	package MyJSRPC;
+	
+	use base qw( JavaScript::RPC::Server::CGI );
+	
+	sub add {
+		my $self = shift;
+		unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+			return $self->error( 'inputs must be digits only' ) 
 		}
-	);
-
-	# process the query
+		return $self->result( $_[ 0 ] + $_[ 1 ] );
+	}
+	
+	sub subtract {
+		my $self = shift;
+		unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+			return $self->error( 'inputs must be digits only' ) 
+		}
+		return $self->result( $_[ 0 ] - $_[ 1 ] );
+	}
+	
+	package main;
+	
+	use strict;
+	
+	my $server = MyJSRPC->new;
 	$server->process;
 
 =head1 DESCRIPTION
@@ -34,8 +44,10 @@ JavaScript::RPC::Server::CGI is a CGI-based server library for use with Brent
 Ashley's JavaScript Remote Scripting (JSRS) client library. It works
 asynchronously and uses DHTML to deal with the payload.
 
+In order to add your custom meothds, this module should be subclassed.
+
 The most current version (as of the release of this module) of the client
-library as well as an demo application have been included in this
+library as well as a demo application have been included in this
 distribution.
 
 =head1 METHODS
@@ -50,35 +62,12 @@ this time.
 sub new {
 	my $class = shift;
 	my $self  = {
-		methods => {},
-		info    => {}
+		env => {}
 	};
 
 	bless $self, $class;
 
 	return $self;
-}
-
-=head2 method()
-
-Define and retrieve the server's methods. To define a method, supply
-a key-value pair of the method's name a reference to the subroutine
-to execute. You can get back any method by supplying its name.
-
-=cut
-
-sub method {
-	my $self    = shift;
-
-	if( @_ > 1 ) {
-		my %methods = @_;
-		for( keys %methods ) {
-			$self->{ methods }->{ $_ } = $methods{ $_ };
-		}
-	}
-	else {
-		return $self->{ methods }->{ $_[ 0 ] };
-	}
 }
 
 =head2 query()
@@ -101,7 +90,7 @@ sub query {
 	return $query;
 }
 
-=head2 info()
+=head2 env()
 
 Gets / sets a hash of information related to the currently query. The data
 is empty until after process() has been executed. The resulting structure
@@ -109,47 +98,68 @@ contains four items:
 
 =over 4 
 
-=item * the method called
+=item * method - the method called
 
-=item * an array of parameters for the method
+=item * params - an array of parameters for the method
 
-=item * the unique id for this query
+=item * uid - the unique id for this query
 
-=item * the context id
+=item * context - the context id
 
 =back
 
 =cut
 
-sub info {
+sub env {
 	my $self = shift;
-	my %info = @_;
 
-	$self->{ info } = \%info if %info;
+	if( @_ % 2 == 0 ) {
+		my %env  = @_;
+		for( keys %env ) {
+			$self->{ env }->{ $_ } = $env{ $_ };
+		}
+	}
+	else {
+		return $self->{ env }->{ $_[ 0 ] } if @_;
+		return %{ $self->{ env } };
+	}
+}
 
-	return %{ $self->{ info } };
+=head2 error_message()
+
+Get / sets the error message sent to the client if an error occurred.
+
+=cut
+
+sub error_message {
+	my $self    = shift;
+	my $message = shift;
+
+	$self->{ error_message } = $message if $message;
+
+	return $self->{ error_message };
 }
 
 =head2 process()
 
 Processes the current query and either returns the result from the appropriate
-method, or an error to the client and return either true or false, respectively,
+method, or an error to the client and returns either true or false, respectively,
 to the caller. An error will occur if the method name is blank, or the method
 has not been defined. This function takes an optional CGI.pm compatible object
 as an input.
 
-NOTE: Things seem to break with IIS && Firebird (at least) if the content-type
-header is not printed before we create a new CGI object. This means supplying
-a query object to this function, or using the query() method BEFORE process()
-can break things.
+Your subclass' methods should finish off with one of the following:
+
+	# for an error...
+	return $self->error( $message );
+
+	# for a successful call...
+	return $self->result( $result );
 
 =cut
 
 sub process {
 	my $self   = shift;
-
-	# Print the content-type before we deal with a query object
-	print "Content-type: text/html\n\n";
 
 	my $query  = shift || $self->query;
 
@@ -167,37 +177,39 @@ sub process {
 		$i++;
 	}
 
-	$self->info(
+	$self->env(
 		method  => $method,
 		uid     => $uid,
 		context => $context,
 		params  => \@params
 	);
 
-#	print $query->header;
+	print $query->header;
 
 	return $self->error( 'No function specified' ) if $method eq '';
-	return $self->error( 'Specified function not implemented' ) unless $self->method( $method );
-	return $self->result( $self->method( $method )->( @params ) );
+	return $self->error( 'Specified function not implemented' ) unless $self->can( $method );
+	return $self->$method( @params );
 }
 
 =head2 error()
 
-Returns a valid error payload to the client and false to the caller.
+Returns a valid error payload to the client and false to the caller. It will
+automatically call error_message() for you.
 
 =cut
 
 sub error {
 	my $self    = shift;
 	my $message = shift;
-	my %info    = $self->info;
+	my %env     = $self->env;
 
+	$self->error_message( $message );
 	carp( $message );
 
 	print <<"EO_ERROR";
 <html>
 <head></head>
-<body onload="p = document.layers?parentlayer:window.parent; p.jsrsError( '$info{ context }', '$message' );">$message</body>
+<body onload="p = document.layers?parentlayer:window.parent; p.jsrsError( '$env{ context }', '$message' );">$message</body>
 </html>
 EO_ERROR
 
@@ -213,19 +225,18 @@ Returns a valid result payload to the client and true to the caller.
 sub result {
 	my $self    = shift;
 	my $message = shift;
-	my %info    = $self->info;
+	my %env     = $self->env;
 
 	print <<"EO_RESULT";
 <html>
 <head></head>
-<body onload="p = document.layers?parentLayer:window.parent; p.jsrsLoaded( '$info{ context }' );">jsrsPayload:<br />
+<body onload="p = document.layers?parentLayer:window.parent; p.jsrsLoaded( '$env{ context }' );">jsrsPayload:<br />
 <form name="jsrs_Form">
 <textarea name="jsrs_Payload" id="jsrs_payload">$message</textarea>
 </form>
 </body>
 </html>
 EO_RESULT
-
 
 	return 1;
 }

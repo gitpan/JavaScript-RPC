@@ -1,5 +1,17 @@
 Revision history for Perl extension JavaScript::RPC::Server::CGI.
 
+0.02  Sat Jan 17 12:36:32 2004
+	*** IMPORTANT
+	- This module must now be subclassed in order to add
+	  custom methods (the method() sub has been removed)
+	***
+	- Added error_message method
+	- Renamed info() to env()
+	- Added ABSTRACT to Makefile.PL
+	- Updated demo to work with new module format
+	- Updated README
+	- Query object problems have magically gone away
+
 0.01  Thu Jan 15 10:56:07 2004
 	- original version; created by h2xs 1.23 with options
 		-X -n JavaScript::RPC::Server::CGI
