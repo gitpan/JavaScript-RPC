@@ -6,7 +6,7 @@ use base qw( JavaScript::RPC::Server::CGI );
 
 sub add {
 	my $self = shift;
-	unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+	unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
 		return $self->error( 'inputs must be digits only' ) 
 	}
 	return $self->result( $_[ 0 ] + $_[ 1 ] );
@@ -14,7 +14,7 @@ sub add {
 
 sub subtract {
 	my $self = shift;
-	unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+	unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
 		return $self->error( 'inputs must be digits only' ) 
 	}
 	return $self->result( $_[ 0 ] - $_[ 1 ] );

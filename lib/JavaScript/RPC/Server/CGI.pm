@@ -3,7 +3,7 @@ package JavaScript::RPC::Server::CGI;
 use strict;
 use Carp;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 =head1 NAME
 
@@ -17,17 +17,17 @@ JavaScript::RPC::Server::CGI - Remote procedure calls from JavaScript
 	
 	sub add {
 		my $self = shift;
-		unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-			return $self->error( 'inputs must be digits only' ) 
-		}
+	        unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+        	        return $self->error( 'inputs must be \' digits only' )
+	        }
 		return $self->result( $_[ 0 ] + $_[ 1 ] );
 	}
 	
 	sub subtract {
 		my $self = shift;
-		unless( $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-			return $self->error( 'inputs must be digits only' ) 
-		}
+	        unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
+        	        return $self->error( 'inputs must be digits only' )
+	        }
 		return $self->result( $_[ 0 ] - $_[ 1 ] );
 	}
 	
@@ -113,7 +113,7 @@ contains four items:
 sub env {
 	my $self = shift;
 
-	if( @_ % 2 == 0 ) {
+	if( @_ and @_ % 2 == 0 ) {
 		my %env  = @_;
 		for( keys %env ) {
 			$self->{ env }->{ $_ } = $env{ $_ };
@@ -163,9 +163,9 @@ sub process {
 
 	my $query  = shift || $self->query;
 
-	my $method  = $query->param( 'F' );
-	my $uid     = $query->param( 'U' );
-	my $context = $query->param( 'C' );
+	my $method  = $query->param( 'F' ) || undef;
+	my $uid     = $query->param( 'U' ) || undef;
+	my $context = $query->param( 'C' ) || undef;
 
 	my( $param, @params );
 	my $i = 0;
@@ -186,7 +186,7 @@ sub process {
 
 	print $query->header;
 
-	return $self->error( 'No function specified' ) if $method eq '';
+	return $self->error( 'No function specified' ) unless $method;
 	return $self->error( 'Specified function not implemented' ) unless $self->can( $method );
 	return $self->$method( @params );
 }
@@ -201,6 +201,7 @@ automatically call error_message() for you.
 sub error {
 	my $self    = shift;
 	my $message = shift;
+        my $msg_esc = _js_escape( $message );
 	my %env     = $self->env;
 
 	$self->error_message( $message );
@@ -209,7 +210,7 @@ sub error {
 	print <<"EO_ERROR";
 <html>
 <head></head>
-<body onload="p = document.layers?parentlayer:window.parent; p.jsrsError( '$env{ context }', '$message' );">$message</body>
+<body onload="p = document.layers?parentlayer:window.parent; p.jsrsError( '$env{ context }', '$msg_esc' );">$message</body>
 </html>
 EO_ERROR
 

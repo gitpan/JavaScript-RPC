@@ -1,5 +1,10 @@
 Revision history for Perl extension JavaScript::RPC::Server::CGI.
 
+0.03  Sat Jan 24 22:54:22 2004
+	- Fixed example programs
+	- Added string escaping to error()
+	- Fixed env()
+
 0.02  Sat Jan 17 12:36:32 2004
 	*** IMPORTANT
 	- This module must now be subclassed in order to add

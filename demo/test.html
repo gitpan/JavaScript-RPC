@@ -19,10 +19,10 @@
 <body>
 <h1>Javascript Remote Procedure Call Demo</h1>
 <p>Add or subtract two numbers:</p>
-<form action="test.htm" name="frmPost">
+<form action="test.html" name="frmPost">
 <p><input name="chkPost" type="checkbox" /> use POST</p>
 </form>
-<form action="test.htm" onsubmit="runTest( this.inputA.value, this.inputB.value, this.operator.options[ this.operator.selectedIndex ].value ); return false;">
+<form action="test.html" onsubmit="runTest( this.inputA.value, this.inputB.value, this.operator.options[ this.operator.selectedIndex ].value ); return false;">
 	<input type="text" name="inputA" />
 	<select name="operator">
 		<option value="add"> + </option>
