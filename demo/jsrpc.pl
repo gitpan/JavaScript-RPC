@@ -2,22 +2,33 @@
 
 package MyJSRPC;
 
+use Carp;
 use base qw( JavaScript::RPC::Server::CGI );
 
 sub add {
 	my $self = shift;
-	unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-		return $self->error( 'inputs must be digits only' ) 
+	my @args = @_;
+	unless(
+		@args == 2 and
+		$args[ 0 ] =~ /^\d+$/ and
+		$args[ 1 ] =~ /^\d+$/
+	) {
+		croak( 'inputs must be digits only' ); 
 	}
-	return $self->result( $_[ 0 ] + $_[ 1 ] );
+	return $args[ 0 ] + $args[ 1 ];
 }
 
 sub subtract {
 	my $self = shift;
-	unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-		return $self->error( 'inputs must be digits only' ) 
+	my @args = @_;
+	unless(
+		@args == 2 and
+		$args[ 0 ] =~ /^\d+$/ and
+		$args[ 1 ] =~ /^\d+$/
+	) {
+		croak( 'inputs must be digits only' );
 	}
-	return $self->result( $_[ 0 ] - $_[ 1 ] );
+	return $args[ 0 ] - $args[ 1 ];
 }
 
 package main;

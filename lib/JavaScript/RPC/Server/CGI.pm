@@ -3,7 +3,7 @@ package JavaScript::RPC::Server::CGI;
 use strict;
 use Carp;
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 =head1 NAME
 
@@ -13,22 +13,33 @@ JavaScript::RPC::Server::CGI - Remote procedure calls from JavaScript
 
 	package MyJSRPC;
 	
+	use Carp;
 	use base qw( JavaScript::RPC::Server::CGI );
 	
 	sub add {
 		my $self = shift;
-	        unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-        	        return $self->error( 'inputs must be digits only' )
-	        }
-		return $self->result( $_[ 0 ] + $_[ 1 ] );
+		my @args = @_;
+		unless(
+			@args == 2 and
+			$args[ 0 ] =~ /^\d+$/ and
+			$args[ 1 ] =~ /^\d+$/
+		) {
+			croak( 'inputs must be digits only' ); 
+		}
+		return $args[ 0 ] + $args[ 1 ];
 	}
 	
 	sub subtract {
 		my $self = shift;
-	        unless( @_ == 2 and $_[ 0 ] =~ /^\d+$/ and $_[ 1 ] =~ /^\d+$/ ) {
-        	        return $self->error( 'inputs must be digits only' )
-	        }
-		return $self->result( $_[ 0 ] - $_[ 1 ] );
+		my @args = @_;
+		unless(
+			@args == 2 and
+			$args[ 0 ] =~ /^\d+$/ and
+			$args[ 1 ] =~ /^\d+$/
+		) {
+			croak( 'inputs must be digits only' );
+		}
+		return $args[ 0 ] - $args[ 1 ];
 	}
 	
 	package main;
@@ -72,21 +83,45 @@ sub new {
 
 =head2 query()
 
-Gets / sets the query object.
+Gets / sets the query object. This has the side effect of extracting the
+env() data.
 
 =cut
 
 sub query {
 	my $self  = shift;
-	my $query = shift || $self->{ query };
+	my $query = shift;
 
-	unless( defined $query ) {
+	unless( $query or $self->{ query } ) {
 		$query = $self->get_new_query;
 	}
 
-	$self->{ query } = $query;
+	if( $query ) {
+		my $method  = $query->param( 'F' ) || undef;
+		my $uid     = $query->param( 'U' ) || undef;
+		my $context = $query->param( 'C' ) || undef;
 
-	return $query;
+		my( $param, @params );
+		my $i = 0;
+
+		# Extract parameters
+		while( defined( $param = $query->param( "P$i" ) ) ) {
+			$param =~ s/^\[(.*)\]$/$1/;
+			push @params, $param;
+			$i++;
+		}
+
+		$self->env(
+			method  => $method,
+			uid     => $uid,
+			context => $context,
+			params  => \@params
+		);
+
+		$self->{ query } = $query;
+	}
+
+	return $self->{ query };
 }
 
 =head2 get_new_query()
@@ -114,9 +149,8 @@ sub get_new_query {
 
 =head2 env()
 
-Gets / sets a hash of information related to the currently query. The data
-is empty until after process() has been executed. The resulting structure
-contains four items:
+Gets / sets a hash of information related to the currently query. The
+resulting structure contains four items:
 
 =over 4 
 
@@ -133,7 +167,7 @@ contains four items:
 =cut
 
 sub env {
-	my $self = shift;
+	my $self  = shift;
 
 	if( @_ ) {
 		if( @_ % 2 == 0 ) {
@@ -145,6 +179,9 @@ sub env {
 		else {
 			return $self->{ env }->{ $_[ 0 ] };
 		}
+	}
+	else {
+		$self->query;
 	}
 
 	return %{ $self->{ env } };
@@ -173,46 +210,27 @@ to the caller. An error will occur if the method name is blank, or the method
 has not been defined. This function takes an optional CGI.pm compatible object
 as an input.
 
-Your subclass' methods MUST finish off with one of the following:
-
-	# for an error...
-	return $self->error( $message );
-
-	# for a successful call...
-	return $self->result( $result );
+Your subclass' method will be evaled and will either return an error to the
+caller if it died, or return a valid result payload on success.
 
 =cut
 
 sub process {
 	my $self    = shift;
-	my $query   = shift || $self->query;
-
-	my $method  = $query->param( 'F' ) || undef;
-	my $uid     = $query->param( 'U' ) || undef;
-	my $context = $query->param( 'C' ) || undef;
-
-	my( $param, @params );
-	my $i = 0;
-
-	# Extract parameters
-	while( defined( $param = $query->param( "P$i" ) ) ) {
-		$param =~ s/^\[(.*)\]$/$1/;
-		push @params, $param;
-		$i++;
-	}
-
-	$self->env(
-		method  => $method,
-		uid     => $uid,
-		context => $context,
-		params  => \@params
-	);
+	my $query   = $self->query;
+	my $method  = $self->env( 'method' );
+	my @params  = @{ $self->env( 'params' ) };
 
 	print $query->header;
 
 	return $self->error( 'No function specified' ) unless $method;
 	return $self->error( 'Specified function not implemented' ) unless $self->can( $method );
-	return $self->$method( @params );
+
+        eval {
+                return $self->result( $self->$method( @params ) );
+        };
+
+        return $self->error( $@ ) if $@;
 }
 
 =head2 error()
@@ -225,6 +243,7 @@ automatically call error_message() for you.
 sub error {
 	my $self    = shift;
 	my $message = shift;
+        $message    =~ s/(.+) at (.+?)\n*$/$1/;
         my $msg_esc = _js_escape( $message );
 	my %env     = $self->env;
 
@@ -294,6 +313,7 @@ it under the same terms as Perl itself.
 sub _js_escape {
         my $string = shift;
         $string =~ s/'/\\'/g;
+        $string =~ s/\n/\\r/gs;
         return $string;
 }
 

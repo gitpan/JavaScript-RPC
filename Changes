@@ -1,5 +1,12 @@
 Revision history for Perl extension JavaScript::RPC::Server::CGI.
 
+0.05  Wed Aug 11 10:21:30 2004
+	- Subs no longer need to return error() or result()
+	  just die() or return()
+	- query() now sets env() at the same time
+	- Added new tests
+	- Updated demo script
+
 0.04  Fri Jan 30 21:24:36 2004
 	- Added missing _js_escape() sub
 	- Documenation fixed

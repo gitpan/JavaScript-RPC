@@ -7,4 +7,10 @@ Makefile.PL
 MANIFEST
 README
 t/01-use.t
+t/02-query.t
+t/03-env.t
+t/04-result.t
+t/05-error.t
+t/06-process.t
+t/99-pod.t
 META.yml                                 Module meta-data (added by MakeMaker)
