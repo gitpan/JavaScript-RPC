@@ -1,0 +1,10 @@
+Changes
+demo/jsrpc.pl
+demo/jsrsClient.js
+demo/test.html
+lib/JavaScript/RPC/Server/CGI.pm
+Makefile.PL
+MANIFEST
+README
+t/01-use.t
+META.yml                                 Module meta-data (added by MakeMaker)

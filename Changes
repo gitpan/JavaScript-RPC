@@ -1,0 +1,6 @@
+Revision history for Perl extension JavaScript::RPC::Server::CGI.
+
+0.01  Thu Jan 15 10:56:07 2004
+	- original version; created by h2xs 1.23 with options
+		-X -n JavaScript::RPC::Server::CGI
+
