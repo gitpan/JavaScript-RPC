@@ -12,9 +12,13 @@ sub add {
 	}
 }
 
+sub echo {
+	return $_[ 1 ];
+}
+
 package main;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 BEGIN {
 	use_ok( 'JavaScript::RPC::Server::CGI' )
@@ -86,7 +90,7 @@ SKIP: {
 	$capturestdout->stop;
 	$capturestderr->stop;
 	my @lineserr = $capturestderr->read;
-	my $texterr  = 'No function specified at ' . __FILE__ . " line 85\n";
+	my $texterr  = 'No function specified at ' . __FILE__ . " line 89\n";
 	my @linesout = $capturestdout->read;
 	my $textout  = <<EOT2;
 <html>
@@ -124,7 +128,7 @@ SKIP: {
 	$capturestdout->stop;
 	$capturestderr->stop;
 	my @lineserr = $capturestderr->read;
-	my $texterr  = 'Specified function not implemented at ' . __FILE__ . " line 123\n";
+	my $texterr  = 'Specified function not implemented at ' . __FILE__ . " line 127\n";
 	my @linesout = $capturestdout->read;
 	my $textout  = <<EOT2;
 <html>
@@ -161,7 +165,7 @@ SKIP: {
 	$capturestdout->stop;
 	$capturestderr->stop;
 	my @lineserr = $capturestderr->read;
-	my $texterr  = '2 numbers are needed at ' . __FILE__ . " line 160\n";
+	my $texterr  = '2 numbers are needed at ' . __FILE__ . " line 164\n";
 	my @linesout = $capturestdout->read;
 	my $textout  = <<EOT2;
 <html>
@@ -172,4 +176,37 @@ EOT2
 	is( join( '', @lineserr ), $texterr );
 	is( $server->error_message, '2 numbers are needed' );
 	is( join( '', $linesout[ 1 ] ), $textout );
+}
+
+$query = CGI->new( {
+	C  => 'jsrs6',
+	F  => 'echo',
+	P0 => "[foo\nbar]",
+	U  => '1092142818812'
+} );
+
+$server->query( $query );
+
+SKIP: {
+	eval "use IO::Capture::Stdout";
+	skip 'IO::Capture::Stdout required', 1 if $@;
+
+	my $capture = IO::Capture::Stdout->new;
+	$capture->start;
+	$server->process;
+	$capture->stop;
+	my @lines = $capture->read;
+	my $text  = <<EOT1;
+<html>
+<head></head>
+<body onload="p = document.layers?parentLayer:window.parent; p.jsrsLoaded( 'jsrs6' );">jsrsPayload:<br />
+<form name="jsrs_Form">
+<textarea name="jsrs_Payload" id="jsrs_payload">foo
+bar</textarea>
+</form>
+</body>
+</html>
+EOT1
+
+	is( join( '', $lines[ 1 ] ), $text, 'multi-line param' );
 }

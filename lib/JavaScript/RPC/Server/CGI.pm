@@ -3,7 +3,7 @@ package JavaScript::RPC::Server::CGI;
 use strict;
 use Carp;
 
-our $VERSION = 0.06;
+our $VERSION = '0.1';
 
 =head1 NAME
 
@@ -61,6 +61,22 @@ The most current version (as of the release of this module) of the client
 library as well as a demo application have been included in this
 distribution.
 
+=head1 INSTALLATION
+
+To install this module via Module::Build:
+
+	perl Build.PL
+	./Build         # or `perl Build`
+	./Build test    # or `perl Build test`
+	./Build install # or `perl Build install`
+
+To install this module via ExtUtils::MakeMaker:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+
 =head1 METHODS
 
 =head2 new()
@@ -106,7 +122,7 @@ sub query {
 
 		# Extract parameters
 		while( defined( $param = $query->param( "P$i" ) ) ) {
-			$param =~ s/^\[(.*)\]$/$1/;
+			$param =~ s/^\[(.*)\]$/$1/s;
 			push @params, $param;
 			$i++;
 		}

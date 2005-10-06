@@ -1,5 +1,9 @@
 Revision history for Perl extension JavaScript::RPC::Server::CGI.
 
+0.1   Wed Oct 05 2005
+	- Fixed multi-line parameter handling (thanks to Tyler MacDonald)
+	- Switched to Module::Build
+
 0.06  Wed Mar 02 11:25:16 2005
 	- added pod_coverage test
 

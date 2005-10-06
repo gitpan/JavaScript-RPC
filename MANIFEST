@@ -1,11 +1,11 @@
+Build.PL
 Changes
 demo/jsrpc.pl
 demo/jsrsClient.js
 demo/test.html
 lib/JavaScript/RPC/Server/CGI.pm
-Makefile.PL
+META.yml
 MANIFEST
-README
 t/01-use.t
 t/02-query.t
 t/03-env.t
@@ -14,4 +14,5 @@ t/05-error.t
 t/06-process.t
 t/98-pod_coverage.t
 t/99-pod.t
-META.yml                                 Module meta-data (added by MakeMaker)
+Makefile.PL
+README
