@@ -2,10 +2,11 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-          'NAME' => 'JavaScript::RPC',
-          'VERSION_FROM' => 'lib/JavaScript/RPC/Server/CGI.pm',
-          'PREREQ_PM' => {},
+          'PL_FILES' => {},
           'INSTALLDIRS' => 'site',
-          'PL_FILES' => {}
+          'NAME' => 'JavaScript::RPC',
+          'EXE_FILES' => [],
+          'VERSION_FROM' => 'lib/JavaScript/RPC.pm',
+          'PREREQ_PM' => {}
         )
 ;

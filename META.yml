@@ -1,12 +1,20 @@
---- #YAML:1.0
+---
 name: JavaScript-RPC
-version: 0.1
+version: 0.2
 author:
-  - Brian Cassidy <bricas@cpan.org>
-abstract: Remote procedure calls from JavaScript
+  - 'Brian Cassidy <bricas@cpan.org>'
+abstract: (DEPRECATED) Remote procedure calls from JavaScript
 license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 provides:
+  JavaScript::RPC:
+    file: lib/JavaScript/RPC.pm
+    version: 0.2
   JavaScript::RPC::Server::CGI:
     file: lib/JavaScript/RPC/Server/CGI.pm
-    version: 0.1
-generated_by: Module::Build version 0.2611
+    version: 0.2
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
