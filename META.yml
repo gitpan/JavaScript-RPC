@@ -1,6 +1,6 @@
 ---
 name: JavaScript-RPC
-version: 0.2
+version: 0.3
 author:
   - 'Brian Cassidy <bricas@cpan.org>'
 abstract: (DEPRECATED) Remote procedure calls from JavaScript
@@ -10,7 +10,7 @@ resources:
 provides:
   JavaScript::RPC:
     file: lib/JavaScript/RPC.pm
-    version: 0.2
+    version: 0.3
   JavaScript::RPC::Server::CGI:
     file: lib/JavaScript/RPC/Server/CGI.pm
     version: 0.2
